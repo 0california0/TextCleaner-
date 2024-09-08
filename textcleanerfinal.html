@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Cleaner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: Nunito, Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: black;
+            color: white;
+        }
+        ::placeholder{
+            color: grey;
+        }
+        textarea{
+            width: 100%;
+            margin-bottom: 10px;
+            border-radius: 10px;
+        }
+        textarea {
+            height: 100px;
+            background-color: black;
+            color: white;
+        }
+        #output-container {
+            position: relative;
+            padding: 2px;
+            border-radius: 5px;
+            overflow: hidden;
+            border-radius: 10px;
+        }
+        #output {
+            background-color: black;
+            border: 1px solid grey;
+            padding: 10px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            min-height: 50px;
+            box-sizing: border-box;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+        button {
+            margin-right: 10px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            padding: 0.5rem;
+            cursor: pointer;
+            border: 1px solid grey;
+            background-color: black;
+            color: white;
+        }
+        button:hover {
+            background-image: linear-gradient(rgba(0, 0, 255,0.8), rgba(128, 0, 128,0.8));
+            /*background-color: hsl(0, 0%, 21%);*/
+        }
+        #animation-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            opacity: 0;
+            transition: opacity 0.5s;
+            z-index: 0;
+        }
+        @property --angle {
+            syntax: "<angle>";
+            initial-value: 0deg;
+            inherits: false;
+        }
+        #animation-container::after, #animation-container::before {
+            content: '';
+            position: absolute;
+            height: 100%;
+            width: 100%;
+            background-image: conic-gradient(from var(--angle),transparent,purple,transparent, blue, transparent);
+            animation: 3s spin linear infinite;
+            border-radius: 10px;
+        }
+        #animation-container::before {
+            filter: blur(10px);
+            opacity: 0.9;
+        }
+        @keyframes spin {
+            from { --angle: 0deg; }
+            to { --angle: 360deg; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Text Cleaner</h1>
+    <p>Diese Anwendung entfernt '#' und '*' Zeichen aus einem Text.</p>
+    <textarea id="input" placeholder="Geben Sie hier Ihren Text ein..."></textarea>
+    <button onclick="cleanAndFormatText()">Text bereinigen</button>
+    <button onclick="skipAndCopy()">Text kopieren</button>
+    <button onclick="clearInput()">Textfeld leeren</button>
+    <h2>Bereinigter und formatierter Text:</h2>
+    <div id="output-container">
+        <div id="animation-container"></div>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        let formattedText = '';
+        let isTyping = false;
+
+        document.getElementById('input').addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault(); // Verhindert einen Zeilenumbruch im Textarea
+                cleanAndFormatText();
+            }
+        });
+
+        function cleanAndFormatText() {
+            const inputText = document.getElementById('input').value;
+            const cleanedText = inputText.replace(/[#*]/g, '');
+            formattedText = formatText(cleanedText);
+            typeWriter(formattedText);
+        }
+
+        function formatText(text) {
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            return text.replace(urlRegex, function(url) {
+                return '<a href="' + url + '" target="_blank">' + url + '</a>';
+            });
+        }
+
+        function typeWriter(text) {
+            const output = document.getElementById('output');
+            output.innerHTML = '';
+            let i = 0;
+            isTyping = true;
+
+            function type() {
+                if (i < text.length && isTyping) {
+                    if (text.substr(i, 4) === '<a h') {
+                        let endIndex = text.indexOf('</a>', i) + 4;
+                        output.innerHTML += text.substring(i, endIndex);
+                        i = endIndex;
+                    } else {
+                        output.innerHTML += text.charAt(i);
+                        i++;
+                    }
+                    setTimeout(type, 1);
+                } else {
+                    isTyping = false;
+                    playAnimation();
+                }
+            }
+            type();
+        }
+
+        function skipAndCopy() {
+            isTyping = false;
+            document.getElementById('output').innerHTML = formattedText;
+            playAnimation();
+            
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = document.getElementById('output').innerText;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+            alert('Text wurde in die Zwischenablage kopiert!');
+        }
+
+        function playAnimation() {
+            const animationContainer = document.getElementById('animation-container');
+            animationContainer.style.opacity = '1';
+            setTimeout(() => {
+                animationContainer.style.opacity = '0';
+            }, 3000); // Animation wird nach 3 Sekunden ausgeblendet
+        }
+        function clearInput() {
+            document.getElementById('input').value = '';
+            document.getElementById('output').innerText = '';
+        }
+    </script>
+</body>
+</html>
